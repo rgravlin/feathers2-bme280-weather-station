@@ -1,4 +1,4 @@
-secrets = {
+config = {
 	"influx_write_path": "/write",
 	"influx_database": "sensors",
 	"influx_scheme": "http",
@@ -6,5 +6,7 @@ secrets = {
 	"influx_port": "8086",
 	"sensor_location": "test",
 	"ssid": "",
-	"password": ""
+	"password": "",
+	"sleep_duration": 600,
+	"debug": False
 }

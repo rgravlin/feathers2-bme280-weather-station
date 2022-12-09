@@ -1,8 +1,6 @@
+# Based off the following
 # SPDX-FileCopyrightText: 2021 Kattni Rembor for Adafruit Industries
 # SPDX-License-Identifier: Unlicense
-"""
-CircuitPython Adafruit IO Example for BME280 and LC709203 Sensors
-"""
 import time                                                             # Time for timer and alarms
 import ssl                                                              # SSL for secure communication
 import alarm                                                            # Alarm used for power savings
@@ -17,18 +15,23 @@ from adafruit_bme280 import basic as adafruit_bme280                    # BME280
 
 # Import secrets for WiFi and Influx
 try:
-    from secrets import secrets
+    from config import config
 except ImportError:
-    print("WiFi and Influx information are kept in secrets.py, please add them there!")
+    print("WiFi and Influx information are kept in config.py, please add them there!")
     raise
 
-# Set InfluxDB location
-influxdb_path = secrets["influx_write_path"] + "?db=" + secrets["influx_database"]
-influxdb_url = secrets["influx_scheme"] + "://" + secrets["influx_host"] + ":" + secrets["influx_port"] + influxdb_path
-location = secrets["sensor_location"]
+# Set debug
+debug = config["debug"]
 
-# Feather will sleep for this duration between sensor readings
-sleep_duration = 600
+# Set InfluxDB location
+influxdb_path = config["influx_write_path"] + "?db=" + config["influx_database"]
+influxdb_url = config["influx_scheme"] + "://" + config["influx_host"] + ":" + config["influx_port"] + influxdb_path
+location = config["sensor_location"]
+
+# min_sleep_duration is necessary to avoid ESP32 ambient temperature impact
+# the minimum that can be used safely and accurately is 300 seconds
+min_sleep_duration = 300
+sleep_duration = config["sleep_duration"]
 
 # Setup the red LED
 led = digitalio.DigitalInOut(board.LED)
@@ -57,25 +60,28 @@ def go_to_sleep(sleep_period):
     i2c_power = digitalio.DigitalInOut(board.I2C_POWER)
     i2c_power.switch_to_input()
 
-    # Create a an alarm that will trigger sleep_period number of seconds from now.
+    # Create an alarm that will trigger sleep_period number of seconds from now.
     time_alarm = alarm.time.TimeAlarm(monotonic_time=time.monotonic() + sleep_period)
+
     # Exit and deep sleep until the alarm wakes us.
     alarm.exit_and_deep_sleep_until_alarms(time_alarm)
 
 # Wi-Fi connections can have issues! This ensures the code will continue to run.
 try:
     # Connect to Wi-Fi
-    wifi.radio.connect(secrets["ssid"], secrets["password"])
-    print("Connected to {}!".format(secrets["ssid"]))
-    print("IP:", wifi.radio.ipv4_address)
+    wifi.radio.connect(config["ssid"], config["password"])
+    if debug:
+        print("Connected to {}!".format(config["ssid"]))
+        print("IP:", wifi.radio.ipv4_address)
 
     pool = socketpool.SocketPool(wifi.radio)
     requests = adafruit_requests.Session(pool, ssl.create_default_context())
 
 # Wi-Fi connectivity fails with error messages, not specific errors, so this except is broad.
 except Exception as e:  # pylint: disable=broad-except
-    #print(e)
-    go_to_sleep(60)
+    if debug:
+        print(e)
+    go_to_sleep(min_sleep_duration)
 
 # Define sensors
 measurements = {
@@ -91,6 +97,10 @@ measurements = {
   }
 }
 
+# print all measurements
+if debug:
+    print(measurements)
+
 # Update each measurement
 for measurement, mapping in measurements.items():
     for field, value in mapping.items():
@@ -98,8 +108,8 @@ for measurement, mapping in measurements.items():
       try:
           requests.post(influxdb_url, data=data)
       except Exception as e:  # pylint: disable=broad-except
-          #print(e)
-          go_to_sleep(60)
+          if debug:
+              print(e)
+          go_to_sleep(min_sleep_duration)
 
 go_to_sleep(sleep_duration)
-
