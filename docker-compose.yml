@@ -1,0 +1,38 @@
+version: '3.3'
+
+services:
+   telegraf:
+     image: telegraf:alpine
+     restart: always
+     ports:
+       - "0.0.0.0:8086:8086"
+     volumes:
+      - type: bind
+        source: ./telegraf.conf
+        target: /etc/telegraf/telegraf.conf
+     environment:
+       INFLUX_SKIP_DATABASE_CREATION: 'true'
+       INFLUX_V1_LOCAL_URL: http://192.168.1.230:8090
+       INFLUX_V2_LOCAL_URL: http://192.168.1.230:8091
+       INFLUX_V2_LOCAL_TOKEN: a3a5e1b4-32e2-4a20-87a1-db96fef1bda1
+       INFLUX_V2_LOCAL_ORG: dbag-tech
+       INFLUX_V2_LOCAL_BUCKET: weather
+       INFLUX_V2_REMOTE_URL: http://192.168.1.230:8091
+
+   influx:
+     image: influxdb:2.5.1
+     volumes:
+       - data:/var/lib/influxdb2
+     ports:
+       - "0.0.0.0:8091:8086"
+     restart: always
+     environment:
+       DOCKER_INFLUXDB_INIT_MODE: setup
+       DOCKER_INFLUXDB_INIT_USERNAME: influx-init
+       DOCKER_INFLUXDB_INIT_PASSWORD: influx-init-pw
+       DOCKER_INFLUXDB_INIT_ORG: dbag-tech
+       DOCKER_INFLUXDB_INIT_BUCKET: weather
+       DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: a3a5e1b4-32e2-4a20-87a1-db96fef1bda1
+
+volumes:
+  data: {}
