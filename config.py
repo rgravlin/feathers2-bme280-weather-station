@@ -8,5 +8,6 @@ config = {
 	"ssid": "",
 	"password": "",
 	"sleep_duration": 600,
+	"max_retries": 3,
 	"debug": False
 }

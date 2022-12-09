@@ -114,11 +114,18 @@ for measurement, mapping in measurements.items():
 if debug:
     print(data)
 
-try:
-    requests.post(influxdb_url, data=data)
-except Exception as e:  # pylint: disable=broad-except
-    if debug:
-        print(e)
+# setup retries
+retries = config["max_retries"]
+
+while retries > 0:
+    try:
+        requests.post(influxdb_url, data=data)
+        break
+    except Exception as e:  # pylint: disable=broad-except
+        if debug:
+            print("Request failed...\n", e)
+        retries -= 1
+if retries == 0:
     go_to_sleep(min_sleep_duration)
 
 go_to_sleep(sleep_duration)
