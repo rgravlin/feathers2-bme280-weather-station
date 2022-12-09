@@ -93,8 +93,8 @@ measurements = {
 
 # Update each measurement
 for measurement, mapping in measurements.items():
-    for m, value in mapping.items():
-      data = measurement + "," + "location=" + location + " " + m + "=" + value
+    for field, value in mapping.items():
+      data = measurement + "," + "location=" + location + " " + field + "=" + value
       try:
           requests.post(influxdb_url, data=data)
       except Exception as e:  # pylint: disable=broad-except
