@@ -85,31 +85,40 @@ except Exception as e:  # pylint: disable=broad-except
 
 # Define sensors
 measurements = {
-  "weather": {
-    "humidity": humidity,
-    "pressure": pressure,
-    "temperature_c": temperature,
-    "temperature_f": temperature_f
-  },
-  "battery": {
-    "voltage": battery_voltage,
-    "charge": battery_percent
-  }
+    "weather": {
+        "humidity": humidity,
+        "pressure": pressure,
+        "temperature_c": temperature,
+        "temperature_f": temperature_f
+    },
+    "battery": {
+        "voltage": battery_voltage,
+        "charge": battery_percent
+    }
 }
 
 # print all measurements
 if debug:
     print(measurements)
 
+# store our multiline string for influx batching
+data = ""
+
 # Update each measurement
 for measurement, mapping in measurements.items():
     for field, value in mapping.items():
-      data = measurement + "," + "location=" + location + " " + field + "=" + value
-      try:
-          requests.post(influxdb_url, data=data)
-      except Exception as e:  # pylint: disable=broad-except
-          if debug:
-              print(e)
-          go_to_sleep(min_sleep_duration)
+        payload = measurement + "," + "location=" + location + " " + field + "=" + value + "\n"
+        data += payload
+
+# print outbound request
+if debug:
+    print(data)
+
+try:
+    requests.post(influxdb_url, data=data)
+except Exception as e:  # pylint: disable=broad-except
+    if debug:
+        print(e)
+    go_to_sleep(min_sleep_duration)
 
 go_to_sleep(sleep_duration)
