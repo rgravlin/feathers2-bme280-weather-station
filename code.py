@@ -107,28 +107,21 @@ data = ""
 # Update each measurement
 for measurement, mapping in measurements.items():
     for field, value in mapping.items():
-        payload = "%s,location=%s %s=%.2f\n" % (measurement, location, field, value)
+        payload = "%s,location=%s %s=%s\n" % (measurement, location, field, value)
         data += payload
 
 # Tag our version
-data += "version,location=%s value=%d" % (location, config["git_version"])
+data += "version,location=%s value=\"%s\"\n" % (location, config["git_version"])
 
 # print outbound request
 if debug:
     print(data)
 
-# setup retries
-retries = config["max_retries"]
-
-while retries > 0:
-    try:
-        requests.post(influxdb_url, data=data)
-        break
-    except Exception as e:  # pylint: disable=broad-except
-        if debug:
-            print("Request failed...\n", e)
-        retries -= 1
-if retries == 0:
+try:
+    requests.post(influxdb_url, data=data)
+except Exception as e:  # pylint: disable=broad-except
+    if debug:
+        print("Request failed...\n", e)
     go_to_sleep(min_sleep_duration)
 
 go_to_sleep(sleep_duration)
