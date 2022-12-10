@@ -1,4 +1,5 @@
 config = {
+	"git_version": "",
 	"influx_write_path": "/write",
 	"influx_database": "sensors",
 	"influx_scheme": "http",

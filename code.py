@@ -107,8 +107,11 @@ data = ""
 # Update each measurement
 for measurement, mapping in measurements.items():
     for field, value in mapping.items():
-        payload = measurement + "," + "location=" + location + " " + field + "=" + value + "\n"
+        payload = "%s,location=%s %s=%.2f\n" % (measurement, location, field, value)
         data += payload
+
+# Tag our version
+data += "version,location=%s value=%d" % (location, config["git_version"])
 
 # print outbound request
 if debug:
